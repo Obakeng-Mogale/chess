@@ -30,19 +30,25 @@ def main():
         
 
         """does this till piece is not none"""
-        if piece_clicked == None:
+        if piece_clicked == None or piece_clicked.color!=TURN:
             continue
 
         game_board.refresh(piece_clickedxy)#ensures square is highlighted
-        print('piece can move to', game_board.getValidMoves(piece_clicked))
+        possible_moves = game_board.getValidMoves(piece_clicked)
+        # print('piece can move to', )
         movexy =  game_board.await_move()
         color_pieces = game_board.get_piece_locations(piece_clicked)
         
         move = game_board.getPiece(movexy[1],movexy[0],TURN)
+       
         if movexy == piece_clickedxy or move in color_pieces:
             # new_piece_clicked = move
             continue
-        TURN = game_board.handleMove(piece_clicked,movexy[1],movexy[0],piece_clickedxy[1],piece_clickedxy[0],TURN)
+        elif move != None:#move in possible_moves and 
+            """deals with captures""" 
+            TURN = game_board.handleMove(piece_clicked,movexy[1],movexy[0],piece_clickedxy[1],piece_clickedxy[0],TURN, captures=0)
+
+        else:TURN = game_board.handleMove(piece_clicked,movexy[1],movexy[0],piece_clickedxy[1],piece_clickedxy[0],TURN, captures=-1)# -1 being nothing was captured in the move
 
         
         

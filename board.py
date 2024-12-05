@@ -27,6 +27,7 @@ image of pieces
 
 class Board:
     def __init__(self):
+        self.move_history = [[]]
         self.board = stdarray.create2D(8,8,None)
         self.last_move = None
         self.black_castling_k = True#true meaning it can happen
@@ -130,16 +131,24 @@ class Board:
 
         pass
 
+    def convert_to_alphanumeric(self,rank,rfile):
+        return letters[rfile]+str(8-rank)
+
     def getPiece(self,rank,rfile,Turn):
 
         """return the piece object"""
 
         piece = self.board[rank][rfile]
+        
         if piece is None:
             return None
-        if piece.color == Turn:    
+        if piece.color == Turn:
+            print(type(piece),piece.color)
             return piece
-        else:return None
+        if piece.color !=Turn:
+            print(type(piece),piece.color)
+            return piece
+  
     
     def get_piece_locations(self,piece):
         locations = []
@@ -152,8 +161,6 @@ class Board:
 
     """might need to be in pieces.py"""
     def getValidMoves(self,piece):
-        print(piece.rank,piece.rfile)
-        print("this is a ",type(piece))
         if type(piece) == "Pawn":
                     pass
         elif type(piece)=="Rook":
@@ -187,18 +194,34 @@ class Board:
         return rfile,rank
         
             
-    def handleMove(self,piece,rank,rfile, previousrank,previousfile,turn:bool)->bool:
-        previous_block = self.convert_to_alphanumeric(self.board[previousrank,previousfile])
+    def handleMove(self,piece,rank,rfile, previousrank,previousfile,turn:bool, captures=-1)->bool:
+        capture = ''
+        if captures != -1:
+            capture = 'x'
+        previous_block = self.convert_to_alphanumeric(previousrank,previousfile)
         self.board[piece.rank][piece.rfile]= None
         piece.move(rank,rfile)
         if piece.is_first_move and type(pieces.Pawn):
             self.en_passant = previous_block
+
+        if type(piece)== pieces.Pawn:
+            if captures==0:
+                self.move_history[self.fullmove]
+                self.move_history[self.fullmove].append(str(letters[previousfile]+capture+self.convert_to_alphanumeric(rank,rfile)))
+            else:self.move_history[self.fullmove].append(str(self.convert_to_alphanumeric(rank,rfile)))
+        else:self.move_history[self.fullmove].append(str(piece)+ capture+ self.convert_to_alphanumeric(rank,rfile))
+
+
         self.board[piece.rank][piece.rfile]= piece
         self.last_move= [rfile,rank]
         self.previous_location= [previousfile,previousrank]
         stdaudio.playFile("sounds/move")
+
         if not turn:
+            self.move_history.append([])
             self.fullmove+=1
+
+        print(self.move_history)
         return not turn
         
     def refresh(self,pos=None):
@@ -274,7 +297,7 @@ if __name__ == "__main__":
     # print(state,len(state))
     board.draw_board()
     board.board_state(state)
-   
+    print(board.convert_to_alphanumeric(0,0))
     piecexy = board.await_move()
     p = board.getPiece(piecexy[1],piecexy[0])
     print(piecexy,"\n",p)
