@@ -1,23 +1,25 @@
 import stddraw
-import stdarray,stdio
+import stdarray,stdio,stdaudio
 import math
 from color import Color
 from picture import Picture
 import time
 import pieces
+
 #setting the scene
 wKNIGHT=Picture('pieces-png/wN.png')
-
 lightGreen = Color(238,238,210)
 darkGreen = Color(118,150,86)
 darkGrey = Color(48,46,43)
-highlighted_green = Color(185,202,67)
+highlighted_dark = Color(185,202,67)
 highlighted_light = Color(245,246,130)
 stddraw.setCanvasSize(800,800)
 stddraw.setPenColor(darkGreen)
 stddraw.setXscale(-2,9)
 stddraw.setYscale(-2,9)
 winner = None
+letters = ['a','b','c','d','e','f','g','h']
+
 """
 image of pieces
 """
@@ -26,11 +28,21 @@ image of pieces
 class Board:
     def __init__(self):
         self.board = stdarray.create2D(8,8,None)
+        self.last_move = None
+        self.black_castling_k = True#true meaning it can happen
+        self.white_castling_K= True
+        self.black_castling_q = True#true meaning it can happen
+        self.white_castling_Q= True
+        self.previous_location = None
+        self.en_passants = []
+        self.halfmove_clock = 0
+        self.fullmove = 0
 
     def read_FEN(self,FEN:str):
         """rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
             starting Fen notation
         """
+        white_to_play = True
         index = 0
         state = None
         FEN = FEN.split('/')
@@ -72,58 +84,145 @@ class Board:
                     else:self.board[i][j]= pieces.Bishop(i,j,False)
                 index+=1
         return FEN[index+1:]
-    
+        
+      
 
     def board_state(self,fen_state:str):
+
+        """turn , castling_w, castling_black,possible en_passants
+        -
+        kq
+        KQ
+        kQ
+        Kq
+
+        """
+
+        white_to_move=True
         fen_state=fen_state.split(' ')
-        return fen_state
+        print(fen_state)
+        castling = fen_state[1]
+        en_passants = fen_state[2]
+        halfmoves = fen_state[3]
+        fullmoves = fen_state[4]
+        self.fullmove=fullmoves
+        self.halfmove_clock = halfmoves
+        self.en_passants = en_passants
+        if fen_state[1] == '-':
+            self.white_castling_Q= False
+            self.black_castling_q= False
+            self.white_castling_K = False
+            self.black_castling_k= False
+
+        if "K" in fen_state[1] :
+            self.black_castling_k= False
+            self.black_castling_q= False
+        if fen_state[1] == 'kq':
+            self.black_castling_k= False
+            self.black_castling_q= False
+        if fen_state[0] =='w':
+            white_to_move = True
+        else: white_to_move = False
+
+    def get_fen(self):
+
+        """return current board states fen notation"""
+
+        pass
+
+    def getPiece(self,rank,rfile,Turn):
+
+        """return the piece object"""
+
+        piece = self.board[rank][rfile]
+        if piece is None:
+            return None
+        if piece.color == Turn:    
+            return piece
+        else:return None
+    
+    def get_piece_locations(self,piece):
+        locations = []
+        for rank in self.board:
+            for square in rank:
+                if square != None and square==piece:
+                    locations.append(square)
+        return locations
     
 
-    def getPiece(self,rank,rfile):
-        piece = self.board[rank][rfile]
-        return piece
-    
+    """might need to be in pieces.py"""
     def getValidMoves(self,piece):
+        print(piece.rank,piece.rfile)
+        print("this is a ",type(piece))
+        if type(piece) == "Pawn":
+                    pass
+        elif type(piece)=="Rook":
+            pass
+        elif type(piece) == "Knight":
+            pass
+        elif type(piece)=="Bishop":
+            pass
+        elif type(piece) == "Queen":
+            pass
+        elif type(piece)=="King":
+            pass
         for rank in range(len(self.board)):
             for rfile in range(len(self.board[rank])):
                 pass
+                
 
     def await_move(self):
 
         while not(stddraw.mousePressed()):
-                stddraw.show(1)
+                stddraw.show(0.1)
 
-        rfile,rank = int(round(stddraw.mouseX())),(7-int(round(stddraw.mouseY())))
+        rfile,rank = int(round(stddraw.mouseX())),(7-int(round(stddraw.mouseY())))\
+        
         stddraw.clear()
+
         if not(0<=rank<=7)or not(0<=rfile<=7):
+            self.draw_board()
             return self.await_move()
         self.draw_board()
         return rfile,rank
         
             
-    def handleMove(self,piece,rank,rfile):
+    def handleMove(self,piece,rank,rfile, previousrank,previousfile,turn:bool)->bool:
+        previous_block = self.convert_to_alphanumeric(self.board[previousrank,previousfile])
         self.board[piece.rank][piece.rfile]= None
         piece.move(rank,rfile)
+        if piece.is_first_move and type(pieces.Pawn):
+            self.en_passant = previous_block
         self.board[piece.rank][piece.rfile]= piece
-        pass
+        self.last_move= [rfile,rank]
+        self.previous_location= [previousfile,previousrank]
+        stdaudio.playFile("sounds/move")
+        if not turn:
+            self.fullmove+=1
+        return not turn
         
-    def refresh(self):
+    def refresh(self,pos=None):
         stddraw.clear()
+        #removes the previous highlight from move
+      
+        self.draw_board(highlighted=pos)
         return 
-    def draw_board(self, latest_move:list =None,highlighted:list = None):
-        print(highlighted)
-
+    
+    def draw_board(self,highlighted:list = None, possible_moves=None):
+        
         stddraw.setPenColor(darkGrey)
         stddraw.filledSquare((-1+8)/2,(-1+8)/2,10)
         for rank in range(len(self.board)):
-
+            stddraw.setFontSize(16)
             for cfile in range(len(self.board[rank])):
 
                 piece = self.board[7-rank][cfile]
-
+                
                 if ((rank+cfile)%2)==0:
-                    if (cfile,rank) == highlighted:
-                        stddraw.setPenColor(highlighted_green)
+                    if (cfile,7-rank) == highlighted or self.last_move ==[cfile,7-rank] or self.previous_location == [cfile,7-rank]:
+                        stddraw.setPenColor(highlighted_dark)
+                    # elif self.last_move!=None:
+                    #     stddraw.setPenColor(highlighted_dark)
                     else:    
                         stddraw.setPenColor(darkGreen)
                     stddraw.filledSquare(cfile,rank,0.505)
@@ -131,35 +230,35 @@ class Board:
                     if piece:
 
                         stddraw.picture(piece.get_image(),cfile,rank,1,1)
-
-
+                    # if cfile==7 :
+                    #     stddraw.setPenColor(darkGreen)
+                    #     stddraw.text(cfile+0.25,rank+0.25,str(rank))
+                    # if rank == 0:
+                    #     stddraw.setPenColor(darkGreen)
+                    #     stddraw.text(cfile+0.25,rank+0.25,letters[rank])
+                
                 else:
-                    
-                    if (cfile,rank)== highlighted:
+            
+                    if (cfile,7-rank)== highlighted or self.last_move ==[cfile,7-rank] or self.previous_location == [cfile,7-rank]:
 
                         stddraw.setPenColor(highlighted_light)
                     else:
                         stddraw.setPenColor(lightGreen)
                     stddraw.filledSquare(cfile,rank,0.505)
+                    
                     if piece:
                         stddraw.picture(piece.get_image(),cfile,rank,1,1)
-
+                    # if cfile==0 and rank==7:
+                    #     stddraw.setPenColor(lightGreen)
+                    #     stddraw.text(cfile+0.99,rank+0.99,str(rank))
+                    # if rank == 7:
+                    #     stddraw.setPenColor(lightGreen)
+                    #     stddraw.text(cfile+0.5,rank+0.5,letters[rank])
         stddraw.show(1)
 
 
     def __str__(self):
         return str(stdarray.write2D(self.board))
-
-'''
-Pieces location using 2d array
-'''
-
-
-
-
-
-def getPiece(x,y):
-    pass
 
 
             
@@ -170,42 +269,13 @@ if __name__ == "__main__":
     random = "1b6/1p6/1k4P1/2p2B2/3qb2B/1K1p2PP/2p1pp2/8 w - - 0 1"
     random1 = "3k4/8/2pP2B1/P1P1p1p1/7P/1K4pp/7b/Bn2r3 w - - 0 1"
     random2 = "rnb1kbnr/ppp2ppp/3ppq2/8/5P2/6P1/PPPPP2P/RNBQKBNR w KQkq - 0 1"
-    state = board.read_FEN(default)
-    state = board.board_state(state)
-    print(state,len(state))
+    state = board.read_FEN(random)
+    # state = board.board_state(state)
+    # print(state,len(state))
     board.draw_board()
+    board.board_state(state)
+   
     piecexy = board.await_move()
     p = board.getPiece(piecexy[1],piecexy[0])
     print(piecexy,"\n",p)
-    movexy = board.await_move()
-    move = getPiece(movexy[1],movexy[0])
-    print(move)
-    # for i in board:
-    #     for j in i:
-    #         print(j,end=' ')
-    #     print()
-    # draw_board(board)
-    
-    # # Check if the mouse button is pressed
-    # while winner == None:
-    #     while not stddraw.mousePressed():
-    #         stddraw.show(1)
-    #         # Get the coordinates of the mouse pointer
-    #     x = int(stddraw.mouseX())
-    #     y = int(stddraw.mouseY())
-    #     stddraw.clear()
-    #     draw_board(board)
-    #     time.sleep(0.01)
-    #     getPiece(x,y)
-    #     print('here')
-    #     while not stddraw.mousePressed():
-    #         stddraw.show(1)
-    #     xa = int(stddraw.mouseX())
-    #     ya = int(stddraw.mouseY())
-    #     # Draw a point at the mouse coordinate
-    #     print(x,y)
-    #     handle_move(x,y,xa,ya)
-    #     # Show the result
 
-    #     # Small delay to prevent multiple detections for a single click
-    #     time.sleep(0.1)
