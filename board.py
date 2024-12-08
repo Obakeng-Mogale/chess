@@ -29,7 +29,7 @@ class Board:
     def __init__(self):
         self.move_history = [[]]
         self.board = stdarray.create2D(8,8,None)
-        self.last_move = None
+        self.last_move = None#last move made
         self.black_castling_k = True#true meaning it can happen
         self.white_castling_K= True
         self.black_castling_q = True#true meaning it can happen
@@ -37,7 +37,7 @@ class Board:
         self.previous_location = None
         self.en_passants = []
         self.halfmove_clock = 0
-        self.fullmove = 0
+        self.fullmove = 0 #both players have moved
 
     def read_FEN(self,FEN:str):
         """rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
@@ -143,10 +143,8 @@ class Board:
         if piece is None:
             return None
         if piece.color == Turn:
-            print(type(piece),piece.color)
             return piece
         if piece.color !=Turn:
-            print(type(piece),piece.color)
             return piece
   
     
@@ -161,22 +159,112 @@ class Board:
 
     """might need to be in pieces.py"""
     def getValidMoves(self,piece):
-        if type(piece) == "Pawn":
-                    pass
-        elif type(piece)=="Rook":
-            pass
-        elif type(piece) == "Knight":
-            pass
-        elif type(piece)=="Bishop":
-            pass
-        elif type(piece) == "Queen":
-            pass
-        elif type(piece)=="King":
-            pass
-        for rank in range(len(self.board)):
-            for rfile in range(len(self.board[rank])):
-                pass
+        """gets all valid moves for the pieces possible moves"""
+
+        if type(piece) == pieces.Pawn:
+            piece:pieces.Pawn
+            moves= piece.get_possible_moves()
+            moves:list
+            invalid_moves = []
+            for square in moves:
                 
+                next_square = self.board[square[0]][square[1]]
+                if next_square != None and next_square.get_color()== piece.color:
+                    """ if the square has a team piece"""
+                    invalid_moves.append(square)
+                
+                if piece.color:
+                    print((square == [piece.rank-1,piece.rfile+1] or square == [piece.rank-1,piece.rfile-1]) and next_square == None)
+                    if (square == [piece.rank-1,piece.rfile+1] or square == [piece.rank-1,piece.rfile-1]) and next_square != None and next_square.get_color() == piece.color:
+                        invalid_moves.append(square)
+                    if (square == [piece.rank-1,piece.rfile+1] or square == [piece.rank-1,piece.rfile-1]) and next_square == None:
+                        invalid_moves.append(square)
+                    if (square == [piece.rank-1,piece.rfile]or square ==[piece.rank-2,piece.rfile]) and next_square!=None:
+                        invalid_moves.append(square)
+                    
+                else:
+                    if (square == [piece.rank+1,piece.rfile+1]or square == [piece.rank+1,piece.rfile-1]) and next_square != None and next_square.get_color() == piece.color:
+                        invalid_moves.append(square)
+                    if (square == [piece.rank+1,piece.rfile+1]or square == [piece.rank+1,piece.rfile-1]) and next_square == None:
+                        invalid_moves.append(square)
+                    if (square == [piece.rank+1,piece.rfile]or square ==[piece.rank-2,piece.rfile]) and next_square!=None:
+                        invalid_moves.append(square)
+            
+                      
+             
+        elif type(piece)==pieces.Rook:
+            piece:pieces.Rook
+            moves= piece.get_possible_moves()
+            moves:list
+            invalid_moves = []
+           
+            for move in moves:
+                square  = self.board[move[0]][move[1]]
+                if square != None and square.get_color() == piece.color:
+
+                    invalid_moves.append(move)
+                    direction = piece.get_direction(move)
+                  
+                    invalid_moves+=piece.get_blocked_in_direction(move,direction,moves)
+                elif square!=None:
+                    direction = piece.get_direction(move)
+                    invalid_moves+=piece.get_blocked_in_direction(move,direction,moves)
+
+           
+        
+        elif type(piece) == pieces.Knight:
+            piece:pieces.Knight
+            moves= piece.get_possible_moves()
+            moves:list
+            invalid_moves = []
+            print(moves)
+            for move in moves:
+                square  = self.board[move[0]][move[1]]
+                if square != None and square.get_color() == piece.color:
+                    invalid_moves.append(move)
+            
+        elif type(piece)==pieces.Bishop:
+            piece:pieces.Rook
+            moves= piece.get_possible_moves()
+            moves:list
+            invalid_moves = []
+            print(moves)
+            for move in moves:
+                square  = self.board[move[0]][move[1]]
+                if square != None and square.get_color() == piece.color:
+
+                    invalid_moves.append(move)
+                    direction = piece.get_direction(move)
+                    print(square,direction,move)
+                    invalid_moves+=piece.get_blocked_in_direction(move,direction,moves)
+                
+        elif type(piece) == "Queen":
+            piece:pieces.Rook
+            moves= piece.get_possible_moves()
+            moves:list
+            invalid_moves = []
+            print(moves)
+            for move in moves:
+                square  = self.board[move[0]][move[1]]
+        elif type(piece)==pieces.King:
+            """ensure king cannot move into danger and other pieces by using pin"""
+            piece:pieces.King
+            moves= piece.get_possible_moves()
+            moves:list
+            invalid_moves = []
+            print(moves)
+            for move in moves:
+                square  = self.board[move[0]][move[1]]
+                if square != None and square.get_color() == piece.color:
+                    invalid_moves.append(move)
+                
+            final = [x for x in moves if x not in invalid_moves]
+            return final
+        # for rank in range(len(self.board)):
+        #     for rfile in range(len(self.board[rank])):
+        #         pass
+        final= [x for x in moves if x not in invalid_moves]
+        return final 
 
     def await_move(self):
 
@@ -221,7 +309,7 @@ class Board:
             self.move_history.append([])
             self.fullmove+=1
 
-        print(self.move_history)
+        # print(self.move_history)
         return not turn
         
     def refresh(self,pos=None):
@@ -232,7 +320,7 @@ class Board:
         return 
     
     def draw_board(self,highlighted:list = None, possible_moves=None):
-        
+        """need to add highlighting to piece moves possible"""
         stddraw.setPenColor(darkGrey)
         stddraw.filledSquare((-1+8)/2,(-1+8)/2,10)
         for rank in range(len(self.board)):
@@ -253,12 +341,7 @@ class Board:
                     if piece:
 
                         stddraw.picture(piece.get_image(),cfile,rank,1,1)
-                    # if cfile==7 :
-                    #     stddraw.setPenColor(darkGreen)
-                    #     stddraw.text(cfile+0.25,rank+0.25,str(rank))
-                    # if rank == 0:
-                    #     stddraw.setPenColor(darkGreen)
-                    #     stddraw.text(cfile+0.25,rank+0.25,letters[rank])
+                 
                 
                 else:
             
@@ -271,12 +354,7 @@ class Board:
                     
                     if piece:
                         stddraw.picture(piece.get_image(),cfile,rank,1,1)
-                    # if cfile==0 and rank==7:
-                    #     stddraw.setPenColor(lightGreen)
-                    #     stddraw.text(cfile+0.99,rank+0.99,str(rank))
-                    # if rank == 7:
-                    #     stddraw.setPenColor(lightGreen)
-                    #     stddraw.text(cfile+0.5,rank+0.5,letters[rank])
+             
         stddraw.show(1)
 
 
