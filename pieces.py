@@ -217,6 +217,8 @@ class King(Pawn):
         print(out_of_range)
         self.move_locations = [x for x in self.move_locations if x not in out_of_range]
         return self.move_locations
+    
+
 class Bishop(Pawn):
 
     def __init__(self, rank, rfile, color):
@@ -227,11 +229,42 @@ class Bishop(Pawn):
             
         else:self.image = bBISHOP
 
+
     def move(self,rank,rfile):
         self.rank = rank
         self.rfile = rfile
         return
     
+
+    def get_direction(self, coord:list):
+        """gets all things blocking in the direction
+        
+        return down right [1,1] or up right[-1,1] or down left[1,-1] or  up left[-1,-1]"""
+        if coord[0]>self.rank and coord[1]>self.rfile:
+            return [1,1]
+        elif coord[0]<self.rank and coord[1]>self.rfile:
+            return [-1,1]
+        elif coord[1]<self.rfile and coord[0]>self.rank:
+            return [1,-1]
+        elif coord[1]<self.rfile and coord[0]<self.rank:
+            return [-1,-1]
+        
+        
+    def get_blocked_in_direction(self,blocking:list,direction,coords):
+        invalid = []
+       
+        for coord in coords:
+            # print(coord,blocking)
+            if direction == [1,1] and coord[0]>blocking[0] and coord[1]>blocking[1]:
+                invalid.append(coord)
+            elif direction == [-1,1] and coord[0]<blocking[0]and coord[1]>blocking[1]: 
+                invalid.append(coord)
+            elif direction == [1,-1] and coord[1]<blocking[1]and coord[0]>blocking[0]:
+                invalid.append(coord) 
+            elif direction == [-1,-1] and coord[1]<blocking[1]and coord[0]<blocking[0]:
+                invalid.append(coord)      
+        return invalid
+
     def get_possible_moves(self)->list:
         """rooks move in straignt lines and cannot jump over pieces"""
         self.move_locations = []
@@ -249,10 +282,12 @@ class Bishop(Pawn):
 
                 else:
                     self.move_locations.append([self.rank+move,self.rfile-move])
+                
                 if self.move_locations[-1][0]>=8 or self.move_locations[-1][0]<0 or self.move_locations[-1][1]>=8 or self.move_locations[-1][1]<0:
                     self.move_locations.pop()
+        return self.move_locations
     
-class Queen(Rook):
+class Queen(Pawn):
 
     def __init__(self, rank, rfile, color):
         super().__init__(rank, rfile, color)
@@ -266,6 +301,88 @@ class Queen(Rook):
         self.rank = rank
         self.rfile = rfile
         return
+    
+    def get_direction(self, coord:list):
+        """gets all things blocking in the direction
+        
+        return down right [1,1] or up right[-1,1] or down left[1,-1] or  up left[-1,-1]"""
+        if coord[0]>self.rank and coord[1]>self.rfile:
+            return [1,1]
+        elif coord[0]<self.rank and coord[1]>self.rfile:
+            return [-1,1]
+        elif coord[1]<self.rfile and coord[0]>self.rank:
+            return [1,-1]
+        elif coord[1]<self.rfile and coord[0]<self.rank:
+            return [-1,-1]
+        elif coord[0]>self.rank and coord[1]==self.rfile:
+            return [0,1]
+        elif coord[0]<self.rank and coord[1]==self.rfile:
+            return [0,-1]
+        elif coord[1]<self.rfile and coord[0]==self.rank:
+            return [-1,0]
+        elif coord[1]>self.rfile and coord[0]==self.rank:
+            return [1,0]
+        
+        
+    def get_blocked_in_direction(self,blocking:list,direction,coords):
+        invalid = []
+       
+        for coord in coords:
+            # print(coord,blocking)
+            if direction == [1,1] and coord[0]>blocking[0] and coord[1]>blocking[1]:
+                invalid.append(coord)
+            elif direction == [-1,1] and coord[0]<blocking[0]and coord[1]>blocking[1]: 
+                invalid.append(coord)
+            elif direction == [1,-1] and coord[1]<blocking[1]and coord[0]>blocking[0]:
+                invalid.append(coord) 
+            elif direction == [-1,-1] and coord[1]<blocking[1]and coord[0]<blocking[0]:
+                invalid.append(coord) 
+            elif direction == [0,1] and coord[0]>blocking[0] and coord[1]==blocking[1]:
+                invalid.append(coord)
+            elif direction == [0,-1] and coord[0]<blocking[0]and coord[1]==blocking[1]: 
+                invalid.append(coord)
+            elif direction == [-1,0] and coord[1]<blocking[1]and coord[0]==blocking[0]:
+                invalid.append(coord) 
+            elif direction == [1,0] and coord[1]>blocking[1]and coord[0]==blocking[0]:
+                invalid.append(coord)      
+        return invalid
+
+    def get_possible_moves(self)->list:
+        """rooks move in straignt lines and cannot jump over pieces"""
+        self.move_locations = []
+        for direction in range(4):
+            
+            for move in range(1,9):
+                if direction == 0:
+                    self.move_locations.append([self.rank+move,self.rfile+move])
+
+                elif direction ==1: 
+                    self.move_locations.append([self.rank-move,self.rfile-move])
+
+                elif direction ==2: 
+                    self.move_locations.append([self.rank-move,self.rfile+move])
+
+                else:
+                    self.move_locations.append([self.rank+move,self.rfile-move])
+
+                if self.move_locations[-1][0]>=8 or self.move_locations[-1][0]<0 or self.move_locations[-1][1]>=8 or self.move_locations[-1][1]<0:
+                    self.move_locations.pop()
+                    
+                if direction == 0:
+                    self.move_locations.append([self.rank+move,self.rfile])
+
+                elif direction ==1: 
+                    self.move_locations.append([self.rank-move,self.rfile])
+
+                elif direction ==2: 
+                    self.move_locations.append([self.rank,self.rfile+move])
+
+                else:
+                    self.move_locations.append([self.rank,self.rfile-move])
+
+                if self.move_locations[-1][0]>=8 or self.move_locations[-1][0]<0 or self.move_locations[-1][1]>=8 or self.move_locations[-1][1]<0:
+                    self.move_locations.pop()
+        return self.move_locations
 
 
 class Knight(Pawn):

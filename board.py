@@ -238,7 +238,7 @@ class Board:
                     print(square,direction,move)
                     invalid_moves+=piece.get_blocked_in_direction(move,direction,moves)
                 
-        elif type(piece) == "Queen":
+        elif type(piece) == pieces.Queen:
             piece:pieces.Rook
             moves= piece.get_possible_moves()
             moves:list
@@ -246,6 +246,12 @@ class Board:
             print(moves)
             for move in moves:
                 square  = self.board[move[0]][move[1]]
+                if square != None and square.get_color() == piece.color:
+
+                    invalid_moves.append(move)
+                    direction = piece.get_direction(move)
+                    print(square,direction,move)
+                    invalid_moves+=piece.get_blocked_in_direction(move,direction,moves)
         elif type(piece)==pieces.King:
             """ensure king cannot move into danger and other pieces by using pin"""
             piece:pieces.King
