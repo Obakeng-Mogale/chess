@@ -27,6 +27,8 @@ image of pieces
 
 class Board:
     def __init__(self):
+        self.wking=[]
+        self.bking=[]
         self.move_history = [[]]
         self.board = stdarray.create2D(8,8,None)
         self.last_move = None#last move made
@@ -38,6 +40,7 @@ class Board:
         self.en_passants = []
         self.halfmove_clock = 0
         self.fullmove = 0 #both players have moved
+        self.in_check=[False,0]
 
     def read_FEN(self,FEN:str):
         """rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
@@ -77,8 +80,12 @@ class Board:
                     else:self.board[i][j]= pieces.Knight(i,j,False)
 
                 elif discern == 'k':
-                    if letter.isupper():self.board[i][j]= pieces.King(i,j,True)
-                    else:self.board[i][j]= pieces.King(i,j,False)
+                    if letter.isupper():
+                        self.board[i][j]= pieces.King(i,j,True)
+                        self.wking = [self.board[i][j]]
+                    else:
+                        self.board[i][j]= pieces.King(i,j,False)
+                        self.bking = [self.board[i][j]]
                 elif discern == 'b':
 
                     if letter.isupper():self.board[i][j]= pieces.Bishop(i,j,True)
@@ -156,8 +163,11 @@ class Board:
                     locations.append(square)
         return locations
     
-
+    def capture_piece(self,piece):
+        del piece
+        return
     """might need to be in pieces.py"""
+
     def getValidMoves(self,piece):
         """gets all valid moves for the pieces possible moves"""
 
@@ -167,27 +177,47 @@ class Board:
             moves:list
             invalid_moves = []
             for square in moves:
-                
+                #TODO: IMPLEMENT ENPASSANT
                 next_square = self.board[square[0]][square[1]]
                 if next_square != None and next_square.get_color()== piece.color:
                     """ if the square has a team piece"""
                     invalid_moves.append(square)
                 
                 if piece.color:
-                    print((square == [piece.rank-1,piece.rfile+1] or square == [piece.rank-1,piece.rfile-1]) and next_square == None)
+                    if piece.rfile<7:
+                        next_to_right = self.board[piece.rank][piece.rfile+1]
+                       
+                        if (square == [piece.rank-1,piece.rfile+1] ) and next_to_right!= None and next_to_right!= piece and type(next_to_right) == pieces.Pawn and next_to_right.en_passant:
+                            
+                            continue
+                    if piece.rfile>0:
+                        next_to_left = self.board[piece.rank][piece.rfile-1]
+                        if (square == [piece.rank-1,piece.rfile-1])and next_to_left!= None and next_to_left!= piece and type(next_to_left) == pieces.Pawn and next_to_left.en_passant:
+                            continue
+                   
+                    
                     if (square == [piece.rank-1,piece.rfile+1] or square == [piece.rank-1,piece.rfile-1]) and next_square != None and next_square.get_color() == piece.color:
                         invalid_moves.append(square)
-                    if (square == [piece.rank-1,piece.rfile+1] or square == [piece.rank-1,piece.rfile-1]) and next_square == None:
+                    elif (square == [piece.rank-1,piece.rfile+1] or square == [piece.rank-1,piece.rfile-1]) and next_square == None:
                         invalid_moves.append(square)
-                    if (square == [piece.rank-1,piece.rfile]or square ==[piece.rank-2,piece.rfile]) and next_square!=None:
+                    elif (square == [piece.rank-1,piece.rfile]or square ==[piece.rank-2,piece.rfile]) and next_square!=None:
                         invalid_moves.append(square)
                     
                 else:
+                    if piece.rfile<7:
+                        next_to_right = self.board[piece.rank][piece.rfile+1]
+                        if (square == [piece.rank+1,piece.rfile+1] ) and next_to_right!= None and next_to_right!= piece and type(next_to_right) == pieces.Pawn and next_to_right.en_passant:
+                            continue
+                    if piece.rfile>0:
+                        next_to_left = self.board[piece.rank][piece.rfile-1]
+                        if (square == [piece.rank+1,piece.rfile-1])and next_to_left!= None and next_to_left!= piece and type(next_to_left) == pieces.Pawn and next_to_left.en_passant:
+                            continue
+                    
                     if (square == [piece.rank+1,piece.rfile+1]or square == [piece.rank+1,piece.rfile-1]) and next_square != None and next_square.get_color() == piece.color:
                         invalid_moves.append(square)
-                    if (square == [piece.rank+1,piece.rfile+1]or square == [piece.rank+1,piece.rfile-1]) and next_square == None:
+                    elif (square == [piece.rank+1,piece.rfile+1]or square == [piece.rank+1,piece.rfile-1]) and next_square == None:
                         invalid_moves.append(square)
-                    if (square == [piece.rank+1,piece.rfile]or square ==[piece.rank-2,piece.rfile]) and next_square!=None:
+                    elif (square == [piece.rank+1,piece.rfile]or square ==[piece.rank-2,piece.rfile]) and next_square!=None:
                         invalid_moves.append(square)
             
                       
@@ -209,66 +239,61 @@ class Board:
                 elif square!=None:
                     direction = piece.get_direction(move)
                     invalid_moves+=piece.get_blocked_in_direction(move,direction,moves)
-
-           
+        
         
         elif type(piece) == pieces.Knight:
             piece:pieces.Knight
             moves= piece.get_possible_moves()
             moves:list
             invalid_moves = []
-            print(moves)
+            
             for move in moves:
                 square  = self.board[move[0]][move[1]]
                 if square != None and square.get_color() == piece.color:
                     invalid_moves.append(move)
             
         elif type(piece)==pieces.Bishop:
-            piece:pieces.Rook
+            piece:pieces.Bishop
             moves= piece.get_possible_moves()
             moves:list
             invalid_moves = []
-            print(moves)
+            
             for move in moves:
                 square  = self.board[move[0]][move[1]]
-                if square != None and square.get_color() == piece.color:
-
-                    invalid_moves.append(move)
+                if square != None:
+                    if square.get_color() == piece.color:
+                        invalid_moves.append(move)
+                 
                     direction = piece.get_direction(move)
-                    print(square,direction,move)
                     invalid_moves+=piece.get_blocked_in_direction(move,direction,moves)
-                
         elif type(piece) == pieces.Queen:
             piece:pieces.Rook
             moves= piece.get_possible_moves()
             moves:list
             invalid_moves = []
-            print(moves)
+
             for move in moves:
                 square  = self.board[move[0]][move[1]]
-                if square != None and square.get_color() == piece.color:
-
-                    invalid_moves.append(move)
+                if square != None:
+                    if square.get_color() == piece.color:
+                        invalid_moves.append(move)
                     direction = piece.get_direction(move)
-                    print(square,direction,move)
                     invalid_moves+=piece.get_blocked_in_direction(move,direction,moves)
+                
         elif type(piece)==pieces.King:
             """ensure king cannot move into danger and other pieces by using pin"""
             piece:pieces.King
             moves= piece.get_possible_moves()
             moves:list
             invalid_moves = []
-            print(moves)
+            self.check_board
             for move in moves:
                 square  = self.board[move[0]][move[1]]
                 if square != None and square.get_color() == piece.color:
                     invalid_moves.append(move)
+              
                 
-            final = [x for x in moves if x not in invalid_moves]
-            return final
-        # for rank in range(len(self.board)):
-        #     for rfile in range(len(self.board[rank])):
-        #         pass
+
         final= [x for x in moves if x not in invalid_moves]
         return final 
 
@@ -317,6 +342,85 @@ class Board:
 
         # print(self.move_history)
         return not turn
+    
+    def get_all_enemy_moves(self,team:bool,attacking_squares,attacking_sq=None):
+        moves = []
+        if team:
+            moves=attacking_squares
+        else:
+            moves=attacking_sq
+        # for rank in self.board:
+        #     for square in rank:
+        #         if square!= None and square.color != team:
+        #             moves+=square.get_possible_moves()
+        return moves
+    
+    def direction_of_attack(self,king:pieces.King ):
+        """(0,1),(0,-1),(1,0),(-1,0),(1,1),(-1,1),(1,-1),(-1,-1)
+            relative to king
+        """
+        for rank in self.board:
+            for square in rank:
+                if square!=None and type(square)!=pieces.Pawn:
+                    if square.rank>king.rank and square.rfile==king.rfile:
+                        return (1,0)
+                    elif square.rank<king.rank and square.rfile==king.rfile:
+                        return (-1,0)
+                    elif square.rank==king.rank and square.rfile>king.rfile:
+                        return (0,1)
+                    elif square.rank==king.rank and square.rfile<king.rfile:
+                        return (0,-1)
+                    elif square.rank>king.rank and square.rfile>king.rfile:
+                        return (1,1)
+                    elif square.rank>king.rank and square.rfile<king.rfile:
+                        return (1,-1)
+                    elif square.rank<king.rank and square.rfile<king.rfile:
+                        return (-1,-1)
+                    elif square.rank<king.rank and square.rfile>king.rfile:
+                        return (-1,1)
+    
+    def determine_protecting_squares(self,king:pieces.King,directions:list,pieces:list):
+        protecting_capture_squares = []
+        
+        captures = []
+        for direction in directions:
+            for num in range(8):
+                protecting_capture_squares.append([king.rank+direction[0]*num,king.rfile+direction[1]*num])
+    def check_board(self):
+        """ 
+        1 means white is in check
+        -1 means black is in check
+        """
+       
+        pieces_attacking_wking=[]
+        pieces_attacking_bking=[]
+       
+        for rank in self.board:
+            for square in rank:
+                if square is not None:
+                    coords = self.getValidMoves(square)
+                    
+                    
+                    for coord in coords:
+                        
+                        attacking_square = self.board[coord[0]][coord[1]]
+                        if type(attacking_square)== pieces.King and attacking_square.color != square.color:
+                            
+                            if square.color:
+                                count+=1
+                                pieces_attacking_bking.append(square)
+                                self.in_check=[True,1]
+                            elif not square.color:
+                                count+=1
+                                pieces_attacking_bking.append(square)
+                                self.in_check = [True,-1]
+                     
+                            
+
+        if len(pieces_attacking_bking)>0 or len(pieces_attacking_wking)>0 :
+            self.in_check = [False,0]
+        return self.in_check,pieces_attacking_wking,pieces_attacking_bking              
+            
         
     def refresh(self,pos=None):
         stddraw.clear()

@@ -68,6 +68,7 @@ class Pawn:
             self.move_locations.append([self.rank-1,self.rfile])
             if self.is_first_move:
                 self.move_locations.append([self.rank-2,self.rfile])
+                
             
             if self.rfile==0:
                 self.move_locations.append([self.rank-1,self.rfile+1])
@@ -148,7 +149,6 @@ class Rook(Pawn):
         
     def get_blocked_in_direction(self,blocking:list,direction,coords):
         invalid = []
-        print(coords ,"\n",blocking)
         for coord in coords:
             # print(coord,blocking)
             if direction == [0,1] and coord[0]>blocking[0] and coord[1]==blocking[1]:
@@ -214,7 +214,6 @@ class King(Pawn):
             
             if move[0]>=8 or move[0]<0 or move[1]>=8 or move[1]<0:
                     out_of_range.append(move)
-        print(out_of_range)
         self.move_locations = [x for x in self.move_locations if x not in out_of_range]
         return self.move_locations
     
@@ -367,7 +366,7 @@ class Queen(Pawn):
 
                 if self.move_locations[-1][0]>=8 or self.move_locations[-1][0]<0 or self.move_locations[-1][1]>=8 or self.move_locations[-1][1]<0:
                     self.move_locations.pop()
-                    
+
                 if direction == 0:
                     self.move_locations.append([self.rank+move,self.rfile])
 
@@ -416,7 +415,7 @@ class Knight(Pawn):
             
             if move[0]>=8 or move[0]<0 or move[1]>=8 or move[1]<0:
                     out_of_range.append(move)
-        print(out_of_range)
+        
         self.move_locations = [x for x in self.move_locations if x not in out_of_range]
         return self.move_locations
 
